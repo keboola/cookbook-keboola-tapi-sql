@@ -50,11 +50,11 @@ execute "set default password for root user" do
 end
 
 execute "allow ssh tunnel root access" do
-    command "mysql -u root -p#{node['keboola-transformation-db']['mysql']['default-password']} -e \"SET PASSWORD FOR 'root'@'127.0.0.1' = PASSWORD('#{node['keboola-transformation-db']['mysql']['default-password']}');\"
+    command "mysql -u root -p#{node['keboola-transformation-db']['mysql']['default-password']} -e \"SET PASSWORD FOR 'root'@'127.0.0.1' = PASSWORD('#{node['keboola-transformation-db']['mysql']['default-password']}');\""
 end
 
-execute "mysql_tzinfo" do
-    command "mysql_tzinfo_to_sql  /usr/share/zoneinfo/ | mysql -u root -p#{node['keboola-transformation-db']['mysql']['default-password']} mysql"
+execute "mysql tzinfo" do
+    command "mysql_tzinfo_to_sql /usr/share/zoneinfo/ | mysql -u root -p#{node['keboola-transformation-db']['mysql']['default-password']} mysql"
 end
 
 execute "install mkpasswd" do
@@ -74,5 +74,5 @@ execute "create provisioning database" do
 end
 
 execute "register provisioning server" do
-    command "php /tmp/register-mysql-server.php --api-url=\"#{node['keboola-transformation-db']['provisioning-manage-api']['url']\" --manage-token=\"#{node['keboola-transformation-db']['provisioning-manage-api']['token']\" --user=provisioning --password=$PROVISIONING_PASSWORD --database=provisioning --host=\"`hostname`.keboola.com\" --type=transformations --mode=active"
+    command "php /tmp/register-mysql-server.php --api-url=\"#{node['keboola-transformation-db']['provisioning-manage-api']['url']}\" --manage-token=\"#{node['keboola-transformation-db']['provisioning-manage-api']['token']}\" --user=provisioning --password=$PROVISIONING_PASSWORD --database=provisioning --host=\"`hostname`.keboola.com\" --type=transformations --mode=active"
 end

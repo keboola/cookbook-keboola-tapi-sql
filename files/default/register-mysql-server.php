@@ -13,7 +13,7 @@
  */
 
 $shortopts = "a:m:u:p:d:h:t:m:";
-$longopts = ["manage-api-url:", "manage-token:", "user:", "password:", "database:", "host:", "type:", "mode:"];
+$longopts = array("manage-api-url:", "manage-token:", "user:", "password:", "database:", "host:", "type:", "mode:");
 
 $options = getopt($shortopts, $longopts);
 
