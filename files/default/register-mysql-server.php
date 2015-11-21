@@ -20,7 +20,7 @@ $options = getopt($shortopts, $longopts);
 $command = "mkpasswd -l 16";
 $password = exec($command);
 
-$command = "mysql -u root -p" . escapeshellarg($options["local-root-password"]) . " -e \"GRANT ALL PRIVILEGES ON *.* TO 'provisioning'@'%' IDENTIFIED BY '{$password}' WITH GRANT OPTION;\"";
+$command = "mysql -u root -p" . escapeshellarg($options["local-root-password"]) . " -e \"GRANT ALL PRIVILEGES ON *.* TO '" . $options["user"] . "'@'%' IDENTIFIED BY '{$password}' WITH GRANT OPTION;\"";
 $statusCode = 0;
 $output = null;
 $response = exec($command, $output, $statusCode);
@@ -29,7 +29,7 @@ if ($statusCode != 0) {
     exit(1);
 }
 
-$command = "mysql -u root -p" . escapeshellarg($options["local-root-password"]) . " -e \"CREATE DATABASE provisioning DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;\"";
+$command = "mysql -u root -p" . escapeshellarg($options["local-root-password"]) . " -e \"CREATE DATABASE " . $options["database"] . " DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;\"";
 $statusCode = 0;
 $output = null;
 $response = exec($command, $output, $statusCode);
