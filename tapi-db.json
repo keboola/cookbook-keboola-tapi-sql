@@ -6,7 +6,7 @@
             "Description": "WebServer EC2 instance type",
             "Type": "String",
             "Default": "c3.8xlarge",
-            "AllowedValues": ["c3.8xlarge"],
+            "AllowedValues": ["c3.large", "c3.8xlarge"],
             "ConstraintDescription": "must be a valid EC2 instance type."
         },
         "Role": {
@@ -30,6 +30,9 @@
     "Mappings": {
         "AWSInstanceType2Arch": {
             "c3.8xlarge": {
+                "Arch": "PV64"
+            },
+            "c3.large": {
                 "Arch": "PV64"
             }
         },
