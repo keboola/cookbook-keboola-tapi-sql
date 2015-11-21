@@ -61,18 +61,6 @@ execute "install mkpasswd" do
   command "yum -y install expect"
 end
 
-execute "store passwd to env" do
-    command "export PROVISIONING_PASSWORD=`mkpasswd -l 16`"
-end
-
-execute "create provisioning user" do
-    command "mysql -u root -p#{node['keboola-transformation-db']['mysql']['default-password']} -e \"GRANT ALL PRIVILEGES ON *.* TO 'provisioning'@'%' IDENTIFIED BY '$PROVISIONING_PASSWORD' WITH GRANT OPTION;\""
-end
-
-execute "create provisioning database" do
-    command "mysql -u root -p#{node['keboola-transformation-db']['mysql']['default-password']} -e \"CREATE DATABASE provisioning DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;\""
-end
-
-execute "register provisioning server" do
-    command "php /tmp/register-mysql-server.php --manage-api-url=\"#{node['keboola-transformation-db']['provisioning-manage-api']['url']}\" --manage-token=\"#{node['keboola-transformation-db']['provisioning-manage-api']['token']}\" --user=provisioning --password=$PROVISIONING_PASSWORD --database=provisioning --host=\"`hostname`.keboola.com\" --type=transformations --mode=active"
+execute "prepare provisioning user and register provisioning server" do
+    command "php /tmp/register-mysql-server.php --manage-api-url=\"#{node['keboola-transformation-db']['provisioning-manage-api']['url']}\" --manage-token=\"#{node['keboola-transformation-db']['provisioning-manage-api']['token']}\" --local-root-password=\"#{node['keboola-transformation-db']['mysql']['default-password']}\" --user=provisioning --database=provisioning --host=\"`hostname`.keboola.com\" --type=transformations --mode=active"
 end
