@@ -74,5 +74,5 @@ execute "create provisioning database" do
 end
 
 execute "register provisioning server" do
-    command "php /tmp/register-mysql-server.php --api-url=\"#{node['keboola-transformation-db']['provisioning-manage-api']['url']}\" --manage-token=\"#{node['keboola-transformation-db']['provisioning-manage-api']['token']}\" --user=provisioning --password=$PROVISIONING_PASSWORD --database=provisioning --host=\"`hostname`.keboola.com\" --type=transformations --mode=active"
+    command "php /tmp/register-mysql-server.php --manage-api-url=\"#{node['keboola-transformation-db']['provisioning-manage-api']['url']}\" --manage-token=\"#{node['keboola-transformation-db']['provisioning-manage-api']['token']}\" --user=provisioning --password=$PROVISIONING_PASSWORD --database=provisioning --host=\"`hostname`.keboola.com\" --type=transformations --mode=active"
 end
