@@ -73,6 +73,6 @@ execute "create provisioning database" do
     command "mysql -u root -p#{node['keboola-transformation-db']['mysql']['default-password']} -e \"CREATE DATABASE provisioning DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;\""
 end
 
-execute "register provisioning server"
+execute "register provisioning server" do
     command "php /tmp/register-mysql-server.php --api-url=\"#{node['keboola-transformation-db']['provisioning-manage-api']['url']\" --manage-token=\"#{node['keboola-transformation-db']['provisioning-manage-api']['token']\" --user=provisioning --password=$PROVISIONING_PASSWORD --database=provisioning --host=\"`hostname`.keboola.com\" --type=transformations --mode=active"
 end
