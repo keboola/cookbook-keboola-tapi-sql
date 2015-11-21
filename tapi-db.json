@@ -295,7 +295,7 @@
                 ],
                 "NetworkInterfaces": [
                     {
-                        "GroupSet": ["sg-8f9c8aed"],
+                        "GroupSet": ["sg-07086f63"],
                         "AssociatePublicIpAddress": "true",
                         "DeviceIndex": "0",
                         "DeleteOnTermination": "true",
