@@ -1,0 +1,419 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Keboola Transformation DB Server",
+    "Parameters": {
+        "InstanceType": {
+            "Description": "WebServer EC2 instance type",
+            "Type": "String",
+            "Default": "c3.8xlarge",
+            "AllowedValues": ["c3.8xlarge"],
+            "ConstraintDescription": "must be a valid EC2 instance type."
+        },
+        "Role": {
+            "Description": "Server role, can be TRANSFORMATIONS or SANDBOX",
+            "Type": "String",
+            "Default": "TRANSFORMATIONS",
+            "AllowedValues": ["TRANSFORMATIONS"]
+        },
+        "Zone": {
+            "Description": "Run instance in zone (A, B, C, or D)",
+            "Type": "String",
+            "Default": "C",
+            "AllowedValues": [
+                "A",
+                "B",
+                "C",
+                "D"
+            ]
+        }
+    },
+    "Mappings": {
+        "AWSInstanceType2Arch": {
+            "c3.8xlarge": {
+                "Arch": "PV64"
+            }
+        },
+        "AWSRegionArch2AMI": {
+            "us-east-1": {
+                "PV64": "ami-1ecae776"
+            }
+        },
+        "ZoneToSubnet": {
+            "A": {
+                "TRANSFORMATIONS": "none"
+            },
+            "B": {
+                "TRANSFORMATIONS": "none"
+            },
+            "C": {
+                "TRANSFORMATIONS": "subnet-e7683bdd"
+            },
+            "D": {
+                "TRANSFORMATIONS": "subnet-22f1d956"
+            }
+        }
+    },
+    "Resources": {
+
+        "CfnUser": {
+            "Type": "AWS::IAM::User",
+            "Properties": {
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "root",
+                        "PolicyDocument": {
+                            "Statement": [
+                                {
+                                    "Sid": "Stmt1329997232569xk",
+                                    "Action": [
+                                        "s3:GetObject"
+                                    ],
+                                    "Effect": "Allow",
+                                    "Resource": [
+                                        "arn:aws:s3:::keboola-configs/certificates/*",
+                                        "arn:aws:s3:::keboola-configs/deploy-keys/*",
+                                        "arn:aws:s3:::keboola-configs/servers/*"
+                                    ]
+                                }
+
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+
+
+        "HostKeys": {
+            "Type": "AWS::IAM::AccessKey",
+            "Properties": {
+                "UserName": {
+                    "Ref": "CfnUser"
+                }
+            }
+        },
+
+        "Ec2Instance": {
+            "Type": "AWS::EC2::Instance",
+            "Metadata": {
+                "AWS::CloudFormation::Authentication": {
+                    "S3AccessCredentials": {
+                        "type": "S3",
+                        "accessKeyId": {"Ref": "HostKeys"},
+                        "secretKey": {
+                            "Fn::GetAtt": [
+                                "HostKeys",
+                                "SecretAccessKey"
+                            ]
+                        }
+                    }
+                },
+                "AWS::CloudFormation::Init": {
+                    "config": {
+                        "packages": {
+                            "yum": {
+                                "curl": [],
+                                "git": [],
+                                "xfsprogs": []
+                            }
+                        },
+                        "files": {
+                            "/var/chef/environments/production.json": {
+                                "source": "https://s3.amazonaws.com/keboola-configs/servers/environments/production.json",
+                                "authentication": "S3AccessCredentials",
+                                "owner": "root",
+                                "group": "root"
+                            },
+                            "/var/init/node.json": {
+                                "content": {
+                                    "run_list": ["recipe[keboola-tapi-sql]"],
+                                    "aws": {
+                                        "aws_access_key_id": {
+                                            "Ref": "HostKeys"
+                                        },
+                                        "aws_secret_access_key": {
+                                            "Fn::GetAtt": [
+                                                "HostKeys",
+                                                "SecretAccessKey"
+                                            ]
+                                        }
+
+                                    }
+                                },
+                                "mode": "000644",
+                                "owner": "root",
+                                "group": "wheel"
+                            },
+                            "/var/init/solo.rb": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "\n",
+                                        [
+                                            "log_level :info",
+                                            "log_location STDOUT",
+                                            "cookbook_path [\"/var/chef/berks-cookbooks\"]",
+                                            "environment_path \"/var/chef/environments\""
+                                        ]
+                                    ]
+                                },
+                                "mode": "000644",
+                                "owner": "root",
+                                "group": "wheel"
+                            },
+                            "/var/init/bootstrap.sh": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "\n",
+                                        [
+                                            "curl -# -L -k -o /tmp/cookbook-keboola-tapi-sql.tar.gz https://github.com/keboola/cookbook-keboola-tapi-sql/archive/master.tar.gz",
+                                            "curl -L \"https://packagecloud.io/chef/stable/download?distro=6&filename=chefdk-0.2.2-1.x86_64.rpm\" > /tmp/chefdk.rpm",
+                                            "rpm -i /tmp/chefdk.rpm",
+                                            "mkdir -p /var/chef/cookbooks/keboola-tapi-sql",
+                                            "tar --strip 1 -C /var/chef/cookbooks/keboola-tapi-sql -xf /tmp/cookbook-keboola-tapi-sql.tar.gz",
+                                            "export HOME=/root",
+                                            "cd /var/chef/cookbooks/keboola-tapi-sql && /usr/bin/berks vendor /var/chef/berks-cookbooks/"
+                                        ]
+                                    ]
+                                },
+                                "mode": "000644",
+                                "owner": "root",
+                                "group": "wheel"
+                            },
+                            "/var/init/storage.sh": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "\n",
+                                        [
+                                            "mdadm -C /dev/md1 --level=raid0 --raid-devices=2 /dev/xvdi /dev/xvdj",
+                                            "mkdir /media/ephemeral0/; echo y | mdadm -C /dev/md0 --level=raid0 --raid-devices=2 /dev/xvdg /dev/xvdh; mkfs.xfs /dev/md0; mount /dev/md0 /media/ephemeral0/",
+                                            "mkdir /media/ephemeral0/tmp",
+                                            "chmod a+xw /media/ephemeral0/tmp/",
+                                            "chmod +t /media/ephemeral0/tmp/",
+                                            "mount -o,bind /media/ephemeral0/tmp/ /tmp",
+                                            "dd if=/dev/zero of=/media/ephemeral0/swap1.bin count=10000 bs=102400",
+                                            "mkswap /media/ephemeral0/swap1.bin",
+                                            "swapon /media/ephemeral0/swap1.bin",
+                                            "dd if=/dev/zero of=/media/ephemeral0/swap2.bin count=10000 bs=102400",
+                                            "mkswap /media/ephemeral0/swap2.bin",
+                                            "swapon /media/ephemeral0/swap2.bin"
+                                        ]
+                                    ]
+                                },
+                                "mode": "000644",
+                                "owner": "root",
+                                "group": "wheel"
+                            }
+                        }
+                    }
+                }
+            },
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Ref": "AWS::StackName"
+                        }
+                    },
+                    {
+                        "Key": "Role",
+                        "Value": "TAPI-DB"
+                    },
+                    {
+                        "Key": "Stack",
+                        "Value": "TAPI"
+                    },
+                    {
+                        "Key": "Env",
+                        "Value": "PRODUCTION"
+                    }
+                ],
+                "ImageId": {
+                    "Fn::FindInMap": [
+                        "AWSRegionArch2AMI",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        {
+                            "Fn::FindInMap": [
+                                "AWSInstanceType2Arch",
+                                {
+                                    "Ref": "InstanceType"
+                                },
+                                "Arch"
+                            ]
+                        }
+                    ]
+                },
+                "InstanceType": {
+                    "Ref": "InstanceType"
+                },
+                "BlockDeviceMappings": [
+                    {
+                        "DeviceName": "/dev/xvda",
+                        "Ebs": {
+                            "VolumeType": "gp2"
+                        }
+                    },
+                    {
+                        "DeviceName": "/dev/sdg",
+                        "Ebs": {
+                            "Encrypted": "true",
+                            "VolumeSize": "50",
+                            "VolumeType": "gp2",
+                            "DeleteOnTermination": "true"
+                        }
+                    },
+                    {
+                        "DeviceName": "/dev/sdh",
+                        "Ebs": {
+                            "Encrypted": "true",
+                            "VolumeSize": "50",
+                            "VolumeType": "gp2",
+                            "DeleteOnTermination": "true"
+                        }
+                    },
+                    {
+                        "DeviceName": "/dev/sdi",
+                        "Ebs": {
+                            "Encrypted": "true",
+                            "VolumeSize": "50",
+                            "VolumeType": "gp2",
+                            "DeleteOnTermination": "true"
+                        }
+                    },
+                    {
+                        "DeviceName": "/dev/sdj",
+                        "Ebs": {
+                            "Encrypted": "true",
+                            "VolumeSize": "50",
+                            "VolumeType": "gp2",
+                            "DeleteOnTermination": "true"
+                        }
+                    }
+                ],
+                "NetworkInterfaces": [
+                    {
+                        "GroupSet": ["sg-8f9c8aed"],
+                        "AssociatePublicIpAddress": "true",
+                        "DeviceIndex": "0",
+                        "DeleteOnTermination": "true",
+                        "SubnetId": {
+                            "Fn::FindInMap": [
+                                "ZoneToSubnet",
+                                {"Ref": "Zone"},
+                                {"Ref": "Role"}
+                            ]
+                        }
+                    }
+                ],
+                "KeyName": "Martin",
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash\n",
+                                "yum update -y aws-cfn-bootstrap\n",
+                                "yum update -y --security\n",
+
+                                "function error_exit\n",
+                                "{\n",
+                                "  /opt/aws/bin/cfn-signal -e 1 -r \"$1\" '",
+                                {
+                                    "Ref": "WaitHandle"
+                                },
+                                "'\n",
+                                "  exit 1\n",
+                                "}\n",
+
+                                "/opt/aws/bin/cfn-init -s ",
+                                {
+                                    "Ref": "AWS::StackName"
+                                },
+                                " -r Ec2Instance ",
+                                "         --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                " || error_exit 'Failed to initialize Chef Solo'\n",
+                                "bash /var/init/storage.sh > /var/init/storage.log 2>&1\n",
+                                "bash /var/init/bootstrap.sh > /var/init/bootstrap.log 2>&1\n",
+                                "export HOME=/root\n",
+                                "chef-solo --environment production -j /var/init/node.json --config /var/init/solo.rb --node-name ",
+                                {
+                                    "Ref": "AWS::StackName"
+                                },
+                                " > /var/init/chef_solo.log 2>&1\n",
+                                "/opt/aws/bin/cfn-signal -e $? '",
+                                {
+                                    "Ref": "WaitHandle"
+                                },
+                                "'\n"
+                            ]
+                        ]
+                    }
+                }
+
+            }
+
+        },
+
+        "publicDNS": {
+            "Type": "AWS::Route53::RecordSet",
+            "Properties": {
+                "HostedZoneName": "keboola.com.",
+                "Comment": "DNS name for instance.",
+                "Name": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            ".keboola.com"
+                        ]
+                    ]
+                },
+                "Type": "A",
+                "TTL": "900",
+                "ResourceRecords": [
+                    {
+                        "Fn::GetAtt": [
+                            "Ec2Instance",
+                            "PublicIp"
+                        ]
+                    }
+                ]
+            }
+        },
+
+
+        "WaitHandle": {
+            "Type": "AWS::CloudFormation::WaitConditionHandle"
+        },
+
+        "WaitCondition": {
+            "Type": "AWS::CloudFormation::WaitCondition",
+            "DependsOn": "Ec2Instance",
+            "Properties": {
+                "Handle": {
+                    "Ref": "WaitHandle"
+                },
+                "Timeout": "1800"
+            }
+        }
+    },
+    "Outputs": {
+        "Instance": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "Ec2Instance",
+                    "PublicDnsName"
+                ]
+            },
+            "Description": "DNS Name of the newly created EC2 instance"
+        }
+    }
+}
