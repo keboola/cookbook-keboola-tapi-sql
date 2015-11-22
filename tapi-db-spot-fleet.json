@@ -1,0 +1,372 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Keboola Transformation DB Server",
+    "Parameters": {
+        "InstanceType": {
+            "Description": "WebServer EC2 instance type",
+            "Type": "String",
+            "Default": "c3.8xlarge",
+            "AllowedValues": ["c3.large", "c3.8xlarge"],
+            "ConstraintDescription": "must be a valid EC2 instance type."
+        },
+        "SpotPrice": {
+            "Description": "The spot price for this autoscaling group. If a spot price is set, then the autoscaling group will launch when the current spot price is less than the amount specified in the template.",
+            "Type": "String",
+            "Default": "3.5"
+        },
+        "Role": {
+            "Description": "Server role, can be TRANSFORMATIONS or SANDBOX",
+            "Type": "String",
+            "Default": "TRANSFORMATIONS",
+            "AllowedValues": ["TRANSFORMATIONS"]
+        }
+    },
+    "Mappings": {
+        "AWSInstanceType2Arch": {
+            "c3.8xlarge": {
+                "Arch": "PV64"
+            },
+            "c3.large": {
+                "Arch": "PV64"
+            }
+        },
+        "AWSRegionArch2AMI": {
+            "us-east-1": {
+                "PV64": "ami-1ecae776"
+            }
+        },
+        "InstanceSettings": {
+            "TapiDefault": {
+                "BlockDeviceMappings": [
+                    {
+                        "DeviceName": "/dev/xvda",
+                        "Ebs": {
+                            "VolumeType": "gp2"
+                        }
+                    },
+                    {
+                        "DeviceName": "/dev/sdg",
+                        "Ebs": {
+                            "Encrypted": "true",
+                            "VolumeSize": "50",
+                            "VolumeType": "gp2",
+                            "DeleteOnTermination": "true"
+                        }
+                    },
+                    {
+                        "DeviceName": "/dev/sdh",
+                        "Ebs": {
+                            "Encrypted": "true",
+                            "VolumeSize": "50",
+                            "VolumeType": "gp2",
+                            "DeleteOnTermination": "true"
+                        }
+                    },
+                    {
+                        "DeviceName": "/dev/sdi",
+                        "Ebs": {
+                            "Encrypted": "true",
+                            "VolumeSize": "50",
+                            "VolumeType": "gp2",
+                            "DeleteOnTermination": "true"
+                        }
+                    },
+                    {
+                        "DeviceName": "/dev/sdj",
+                        "Ebs": {
+                            "Encrypted": "true",
+                            "VolumeSize": "50",
+                            "VolumeType": "gp2",
+                            "DeleteOnTermination": "true"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "Resources": {
+
+        "CfnUser": {
+            "Type": "AWS::IAM::User",
+            "Properties": {
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "root",
+                        "PolicyDocument": {
+                            "Statement": [
+                                {
+                                    "Sid": "Stmt1329997232569xk",
+                                    "Action": [
+                                        "s3:GetObject"
+                                    ],
+                                    "Effect": "Allow",
+                                    "Resource": [
+                                        "arn:aws:s3:::keboola-configs/certificates/*",
+                                        "arn:aws:s3:::keboola-configs/deploy-keys/*",
+                                        "arn:aws:s3:::keboola-configs/servers/*"
+                                    ]
+                                }
+
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+
+
+        "HostKeys": {
+            "Type": "AWS::IAM::AccessKey",
+            "Properties": {
+                "UserName": {
+                    "Ref": "CfnUser"
+                }
+            }
+        },
+
+        "SpotFleetRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Sid": "",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "spotfleet.amazonaws.com"
+                            },
+                            "Action": "sts:AssumeRole"
+                        }
+                    ]
+                },
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "root",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "ec2:DescribeImages",
+                                        "ec2:DescribeSubnets",
+                                        "ec2:RequestSpotInstances",
+                                        "ec2:TerminateInstances",
+                                        "iam:PassRole"
+                                    ],
+                                    "Resource": ["*"]
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+
+        "SpotFleet": {
+            "Type": "AWS::EC2::SpotFleet",
+            "Metadata": {
+                "AWS::CloudFormation::Authentication": {
+                    "S3AccessCredentials": {
+                        "type": "S3",
+                        "accessKeyId": {
+                            "Ref": "HostKeys"
+                        },
+                        "secretKey": {
+                            "Fn::GetAtt": [
+                                "HostKeys",
+                                "SecretAccessKey"
+                            ]
+                        }
+                    }
+                },
+                "AWS::CloudFormation::Init": {
+                    "config": {
+                        "packages": {
+                            "yum": {
+                                "curl": [],
+                                "git": [],
+                                "xfsprogs": []
+                            }
+                        },
+                        "files": {
+                            "/var/chef/environments/production.json": {
+                                "source": "https://s3.amazonaws.com/keboola-configs/servers/environments/production.json",
+                                "authentication": "S3AccessCredentials",
+                                "owner": "root",
+                                "group": "root"
+                            },
+                            "/var/init/node.json": {
+                                "content": {
+                                    "run_list": ["recipe[keboola-tapi-sql]"],
+                                    "aws": {
+                                        "aws_access_key_id": {
+                                            "Ref": "HostKeys"
+                                        },
+                                        "aws_secret_access_key": {
+                                            "Fn::GetAtt": [
+                                                "HostKeys",
+                                                "SecretAccessKey"
+                                            ]
+                                        }
+
+                                    }
+                                },
+                                "mode": "000644",
+                                "owner": "root",
+                                "group": "wheel"
+                            },
+                            "/var/init/solo.rb": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "\n",
+                                        [
+                                            "log_level :info",
+                                            "log_location STDOUT",
+                                            "cookbook_path [\"/var/chef/berks-cookbooks\"]",
+                                            "environment_path \"/var/chef/environments\""
+                                        ]
+                                    ]
+                                },
+                                "mode": "000644",
+                                "owner": "root",
+                                "group": "wheel"
+                            },
+                            "/var/init/bootstrap.sh": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "\n",
+                                        [
+                                            "curl -# -L -k -o /tmp/cookbook-keboola-tapi-sql.tar.gz https://github.com/keboola/cookbook-keboola-tapi-sql/archive/master.tar.gz",
+                                            "curl -L \"https://packagecloud.io/chef/stable/download?distro=6&filename=chefdk-0.2.2-1.x86_64.rpm\" > /tmp/chefdk.rpm",
+                                            "rpm -i /tmp/chefdk.rpm",
+                                            "mkdir -p /var/chef/cookbooks/keboola-tapi-sql",
+                                            "tar --strip 1 -C /var/chef/cookbooks/keboola-tapi-sql -xf /tmp/cookbook-keboola-tapi-sql.tar.gz",
+                                            "export HOME=/root",
+                                            "cd /var/chef/cookbooks/keboola-tapi-sql && /usr/bin/berks vendor /var/chef/berks-cookbooks/"
+                                        ]
+                                    ]
+                                },
+                                "mode": "000644",
+                                "owner": "root",
+                                "group": "wheel"
+                            },
+                            "/var/init/storage.sh": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "\n",
+                                        [
+                                            "mdadm -C /dev/md1 --level=raid0 --raid-devices=2 /dev/xvdi /dev/xvdj",
+                                            "mkdir /media/ephemeral0/; echo y | mdadm -C /dev/md0 --level=raid0 --raid-devices=2 /dev/xvdg /dev/xvdh; mkfs.xfs /dev/md0; mount /dev/md0 /media/ephemeral0/",
+                                            "mkdir /media/ephemeral0/tmp",
+                                            "chmod a+xw /media/ephemeral0/tmp/",
+                                            "chmod +t /media/ephemeral0/tmp/",
+                                            "mount -o,bind /media/ephemeral0/tmp/ /tmp",
+                                            "dd if=/dev/zero of=/media/ephemeral0/swap1.bin count=10000 bs=102400",
+                                            "mkswap /media/ephemeral0/swap1.bin",
+                                            "swapon /media/ephemeral0/swap1.bin",
+                                            "dd if=/dev/zero of=/media/ephemeral0/swap2.bin count=10000 bs=102400",
+                                            "mkswap /media/ephemeral0/swap2.bin",
+                                            "swapon /media/ephemeral0/swap2.bin"
+                                        ]
+                                    ]
+                                },
+                                "mode": "000644",
+                                "owner": "root",
+                                "group": "wheel"
+                            }
+                        }
+                    }
+                }
+            },
+            "Properties": {
+                "SpotFleetRequestConfigData": {
+                    "IamFleetRole": {
+                        "Fn::GetAtt": ["SpotFleetRole", "Arn"]
+                    },
+                    "SpotPrice": {
+                        "Ref": "SpotPrice"
+                    },
+                    "TargetCapacity": 1,
+                    "LaunchSpecifications": [
+                        {
+                            "InstanceType": {
+                                "Ref": "InstanceType"
+                            },
+                            "ImageId": {
+                                "Fn::FindInMap": [ "AWSRegionArch2AMI", {
+                                    "Ref": "AWS::Region"
+                                },
+                                    {
+                                        "Fn::FindInMap": [ "AWSInstanceType2Arch", {
+                                            "Ref": "InstanceType"
+                                        }, "Arch" ]
+                                    }
+                                ]
+                            },
+                            "BlockDeviceMappings": {
+                                "Fn::FindInMap": ["InstanceSettings", "TapiDefault", "BlockDeviceMappings"]
+                            },
+                            "NetworkInterfaces": [
+                                {
+                                    "Groups": ["sg-07086f63"],
+                                    "AssociatePublicIpAddress": "true",
+                                    "DeviceIndex": "0",
+                                    "DeleteOnTermination": "true",
+                                    "SubnetId": "subnet-e7683bdd"
+                                }
+                            ],
+                            "KeyName": "Martin",
+                            "UserData": {
+                                "Fn::Base64": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "#!/bin/bash\n",
+                                            "yum update -y aws-cfn-bootstrap\n",
+                                            "yum update -y --security\n",
+
+                                            "function error_exit\n",
+                                            "{\n",
+                                            "  /opt/aws/bin/cfn-signal -e 1 -r \"$1\" '",
+                                            "'\n",
+                                            "  exit 1\n",
+                                            "}\n",
+
+                                            "/opt/aws/bin/cfn-init -s ",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            " -r SpotFleet ",
+                                            "         --region ",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            " || error_exit 'Failed to initialize Chef Solo'\n",
+                                            "bash /var/init/storage.sh > /var/init/storage.log 2>&1\n",
+                                            "bash /var/init/bootstrap.sh > /var/init/bootstrap.log 2>&1\n",
+                                            "export HOME=/root\n",
+                                            "export EC2_INSTANCE_ID=\"`wget -q -O - http://instance-data/latest/meta-data/instance-id || error_exit \"wget instance-id has failed: $?\"`\"\n",
+                                            "chef-solo --environment production -j /var/init/node.json --config /var/init/solo.rb --node-name kbc-vpc-tapi-sql-$EC2_INSTANCE_ID  ",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            " > /var/init/chef_solo.log 2>&1\n",
+                                            "/opt/aws/bin/cfn-signal -e $? '",
+                                            "'\n"
+                                        ]
+                                    ]
+                                }
+                            }
+
+                        }
+                    ]
+                }
+            }
+        }
+
+
+    }
+}
