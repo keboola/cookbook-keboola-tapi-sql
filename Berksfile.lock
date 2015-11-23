@@ -1,0 +1,36 @@
+DEPENDENCIES
+  keboola-common
+    git: git://github.com/keboola/cookbook-keboola-common.git
+    revision: 4fba40845e89b036d027ae26635b8a82fd410142
+    tag: 0.2.7
+  keboola-tapi-sql
+    path: .
+    metadata: true
+
+GRAPH
+  aws (2.4.0)
+  hostname (0.3.0)
+    hostsfile (>= 0.0.0)
+  hostsfile (2.4.5)
+  keboola-common (0.2.6)
+    hostname (~> 0.3.0)
+    monit (= 0.7.5)
+    newrelic (~> 2.0.0)
+    papertrail-rsyslog (~> 1.2.0)
+    postfix (= 3.3.1)
+  keboola-tapi-sql (0.1.0)
+    aws (~> 2.4.0)
+    keboola-common (>= 0.0.0)
+    limits (~> 1.0.0)
+    sysctl (~> 0.6.0)
+  limits (1.0.0)
+  monit (0.7.5)
+  newrelic (2.0.0)
+    curl (>= 0.0.0)
+  ohai (2.0.4)
+  papertrail-rsyslog (1.2.0)
+    rsyslog (~> 1.12.1)
+  postfix (3.3.1)
+  rsyslog (1.12.2)
+  sysctl (0.6.2)
+    ohai (>= 0.0.0)
