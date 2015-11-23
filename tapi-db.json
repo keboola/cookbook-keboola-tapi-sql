@@ -57,10 +57,10 @@
         },
         "MysqlSettings": {
           "c3.large": {
-            "innodb_buffer_pool_size": "10G"
+            "InnodbBufferPoolSize": "10G"
           },
           "c3.8xlarge": {
-            "innodb_buffer_pool_size": "54G"
+            "InnodbBufferPoolSize": "54G"
           }
         }
     },
@@ -151,13 +151,15 @@
                                     "run_list": ["recipe[keboola-tapi-sql]"],
                                     "keboola-transformation-db": {
                                       "mysql": {
-                                        "innodb-buffer-pool-size": "Fn::FindInMap": [
+                                        "innodb-buffer-pool-size": {
+                                          "Fn::FindInMap": [
                                             "MysqlSettings",
                                             {
                                               "Ref": "InstanceType"
                                             },
-                                            "innodb_buffer_pool_size"
-                                        ]
+                                            "InnodbBufferPoolSize"
+                                          ]
+                                        }
                                       }
                                     }
                                 },

@@ -30,13 +30,6 @@ execute "install mariadb" do
   command "yum -y install php MariaDB-server MariaDB-client"
 end
 
-cookbook_file "/etc/my.cnf" do
-    source "my.cnf"
-    mode "0644"
-    owner "root"
-    group "root"
-end
-
 template "/etc/my.cnf" do
   source 'my.cnf.erb'
   owner 'root'
