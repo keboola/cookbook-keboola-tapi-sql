@@ -36,90 +36,98 @@
             }
         },
         "MysqlSettings": {
-          "c3.large": {
-            "InnodbBufferPoolSize": "3G"
-          },
-          "c3.8xlarge": {
-            "InnodbBufferPoolSize": "54G"
-          }
+            "c3.large": {
+                "InnodbBufferPoolSize": "3G"
+            },
+            "c3.8xlarge": {
+                "InnodbBufferPoolSize": "54G"
+            }
         },
         "InstanceSettings": {
             "TapiDefault": {
                 "BlockDeviceMappings": [
-                  {
-                      "DeviceName": "/dev/xvda",
-                      "Ebs": {
-                          "VolumeType": "gp2"
-                      }
-                  },
-                 {
-                    "DeviceName"  : "/dev/sdg",
-                    "VirtualName" : "ephemeral0"
-                 },
-                 {
-                    "DeviceName"  : "/dev/sdh",
-                    "VirtualName" : "ephemeral1"
-                 }
+                    {
+                        "DeviceName": "/dev/xvda",
+                        "Ebs": {
+                            "VolumeType": "gp2"
+                        }
+                    },
+                    {
+                        "DeviceName": "/dev/sdg",
+                        "VirtualName": "ephemeral0"
+                    },
+                    {
+                        "DeviceName": "/dev/sdh",
+                        "VirtualName": "ephemeral1"
+                    }
                 ]
             }
         }
     },
     "Resources": {
 
-      "InstanceRole": {
-          "Type": "AWS::IAM::Role",
-          "Properties": {
-              "AssumeRolePolicyDocument": {
-                  "Statement": [
-                      {
-                          "Effect": "Allow",
-                          "Principal": {
-                              "Service": [
-                                  "ec2.amazonaws.com"
-                              ]
-                          },
-                          "Action": [
-                              "sts:AssumeRole"
-                          ]
-                      }
-                  ]
-              },
-              "Path": "/",
-              "Policies": [
-                {
-                  "PolicyName": "root",
-                  "PolicyDocument": {
-                    "Version": "2012-10-17",
-                      "Statement": [
+        "InstanceRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
                         {
-                          "Sid": "ParamsDownload",
-                          "Action": [
-                              "s3:GetObject"
-                          ],
-                          "Effect": "Allow",
-                          "Resource": [
-                              "arn:aws:s3:::keboola-configs/certificates/*",
-                              "arn:aws:s3:::keboola-configs/servers/*"
-                          ]
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "ec2.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
                         }
-                      ]
-                  }
-                }
-              ]
-          }
-      },
+                    ]
+                },
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "root",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Sid": "ParamsDownload",
+                                    "Action": [
+                                        "s3:GetObject"
+                                    ],
+                                    "Effect": "Allow",
+                                    "Resource": [
+                                        "arn:aws:s3:::keboola-configs/certificates/*",
+                                        "arn:aws:s3:::keboola-configs/servers/*"
+                                    ]
+                                },
+                                {
+                                    "Sid": "EC2Tags",
+                                    "Action": [
+                                        "ec2:CreateTags"
+                                    ],
+                                    "Effect": "Allow",
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
 
-      "InstanceRoleInstanceProfile": {
-          "Type": "AWS::IAM::InstanceProfile",
-          "Properties": {
-              "Path": "/",
-              "Roles": [
-                  {
-                      "Ref": "InstanceRole"
-                  }
-              ]
-          }
-      },
+        "InstanceRoleInstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Path": "/",
+                "Roles": [
+                    {
+                        "Ref": "InstanceRole"
+                    }
+                ]
+            }
+        },
 
         "SpotFleetRole": {
             "Type": "AWS::IAM::Role",
@@ -164,10 +172,12 @@
         "SpotFleet": {
             "Type": "AWS::EC2::SpotFleet",
             "Metadata": {
-                "AWS::CloudFormation::Authentication" : {
-                    "S3AccessCredentials" : {
-                        "type" : "S3",
-                        "roleName": { "Ref": "InstanceRole" }
+                "AWS::CloudFormation::Authentication": {
+                    "S3AccessCredentials": {
+                        "type": "S3",
+                        "roleName": {
+                            "Ref": "InstanceRole"
+                        }
                     }
                 },
                 "AWS::CloudFormation::Init": {
@@ -190,17 +200,17 @@
                                 "content": {
                                     "run_list": ["recipe[keboola-tapi-sql]"],
                                     "keboola-transformation-db": {
-                                      "mysql": {
-                                        "innodb-buffer-pool-size": {
-                                          "Fn::FindInMap": [
-                                            "MysqlSettings",
-                                            {
-                                              "Ref": "InstanceType"
-                                            },
-                                            "InnodbBufferPoolSize"
-                                          ]
+                                        "mysql": {
+                                            "innodb-buffer-pool-size": {
+                                                "Fn::FindInMap": [
+                                                    "MysqlSettings",
+                                                    {
+                                                        "Ref": "InstanceType"
+                                                    },
+                                                    "InnodbBufferPoolSize"
+                                                ]
+                                            }
                                         }
-                                      }
                                     }
                                 },
                                 "mode": "000644",
@@ -297,7 +307,7 @@
                             },
                             "IamInstanceProfile": {
                                 "Arn": {
-                                  "Fn::GetAtt": ["InstanceRoleInstanceProfile", "Arn"]
+                                    "Fn::GetAtt": ["InstanceRoleInstanceProfile", "Arn"]
                                 }
                             },
                             "BlockDeviceMappings": {
@@ -343,6 +353,254 @@
                                             "bash /var/init/bootstrap.sh > /var/init/bootstrap.log 2>&1\n",
                                             "export HOME=/root\n",
                                             "export EC2_INSTANCE_ID=\"`wget -q -O - http://instance-data/latest/meta-data/instance-id || error_exit \"wget instance-id has failed: $?\"`\"\n",
+                                            "aws ec2 create-tags --resources $EC2_INSTANCE_ID --tags Key=Name,Value=kbc-vpc-tapi-sql-$EC2_INSTANCE_ID  Key=Env,Value=PRODUCTION Key=Stack,Value=TAPI Key=Role,Value=TAPI-DB --region ",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n",
+                                            "chef-solo --environment production -j /var/init/node.json --config /var/init/solo.rb --node-name kbc-vpc-tapi-sql-$EC2_INSTANCE_ID  ",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            " > /var/init/chef_solo.log 2>&1\n",
+                                            "/opt/aws/bin/cfn-signal -e $? '",
+                                            "'\n"
+                                        ]
+                                    ]
+                                }
+                            }
+
+                        },
+                        {
+                            "InstanceType": {
+                                "Ref": "InstanceType"
+                            },
+                            "ImageId": {
+                                "Fn::FindInMap": [ "AWSRegionArch2AMI", {
+                                    "Ref": "AWS::Region"
+                                },
+                                    {
+                                        "Fn::FindInMap": [ "AWSInstanceType2Arch", {
+                                            "Ref": "InstanceType"
+                                        }, "Arch" ]
+                                    }
+                                ]
+                            },
+                            "IamInstanceProfile": {
+                                "Arn": {
+                                    "Fn::GetAtt": ["InstanceRoleInstanceProfile", "Arn"]
+                                }
+                            },
+                            "BlockDeviceMappings": {
+                                "Fn::FindInMap": ["InstanceSettings", "TapiDefault", "BlockDeviceMappings"]
+                            },
+                            "NetworkInterfaces": [
+                                {
+                                    "Groups": ["sg-07086f63"],
+                                    "AssociatePublicIpAddress": "true",
+                                    "DeviceIndex": "0",
+                                    "DeleteOnTermination": "true",
+                                    "SubnetId": "subnet-70db935b"
+                                }
+                            ],
+                            "KeyName": "Martin",
+                            "UserData": {
+                                "Fn::Base64": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "#!/bin/bash\n",
+                                            "yum update -y aws-cfn-bootstrap\n",
+                                            "yum update -y --security\n",
+
+                                            "function error_exit\n",
+                                            "{\n",
+                                            "  /opt/aws/bin/cfn-signal -e 1 -r \"$1\" '",
+                                            "'\n",
+                                            "  exit 1\n",
+                                            "}\n",
+
+                                            "/opt/aws/bin/cfn-init -s ",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            " -r SpotFleet ",
+                                            "         --region ",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            " || error_exit 'Failed to initialize Chef Solo'\n",
+                                            "bash /var/init/storage.sh > /var/init/storage.log 2>&1\n",
+                                            "bash /var/init/bootstrap.sh > /var/init/bootstrap.log 2>&1\n",
+                                            "export HOME=/root\n",
+                                            "export EC2_INSTANCE_ID=\"`wget -q -O - http://instance-data/latest/meta-data/instance-id || error_exit \"wget instance-id has failed: $?\"`\"\n",
+                                            "aws ec2 create-tags --resources $EC2_INSTANCE_ID --tags Key=Name,Value=kbc-vpc-tapi-sql-$EC2_INSTANCE_ID  Key=Env,Value=PRODUCTION Key=Stack,Value=TAPI Key=Role,Value=TAPI-DB --region ",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n",
+                                            "chef-solo --environment production -j /var/init/node.json --config /var/init/solo.rb --node-name kbc-vpc-tapi-sql-$EC2_INSTANCE_ID  ",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            " > /var/init/chef_solo.log 2>&1\n",
+                                            "/opt/aws/bin/cfn-signal -e $? '",
+                                            "'\n"
+                                        ]
+                                    ]
+                                }
+                            }
+
+                        },
+                        {
+                            "InstanceType": {
+                                "Ref": "InstanceType"
+                            },
+                            "ImageId": {
+                                "Fn::FindInMap": [ "AWSRegionArch2AMI", {
+                                    "Ref": "AWS::Region"
+                                },
+                                    {
+                                        "Fn::FindInMap": [ "AWSInstanceType2Arch", {
+                                            "Ref": "InstanceType"
+                                        }, "Arch" ]
+                                    }
+                                ]
+                            },
+                            "IamInstanceProfile": {
+                                "Arn": {
+                                    "Fn::GetAtt": ["InstanceRoleInstanceProfile", "Arn"]
+                                }
+                            },
+                            "BlockDeviceMappings": {
+                                "Fn::FindInMap": ["InstanceSettings", "TapiDefault", "BlockDeviceMappings"]
+                            },
+                            "NetworkInterfaces": [
+                                {
+                                    "Groups": ["sg-07086f63"],
+                                    "AssociatePublicIpAddress": "true",
+                                    "DeviceIndex": "0",
+                                    "DeleteOnTermination": "true",
+                                    "SubnetId": "subnet-c3adbf9a"
+                                }
+                            ],
+                            "KeyName": "Martin",
+                            "UserData": {
+                                "Fn::Base64": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "#!/bin/bash\n",
+                                            "yum update -y aws-cfn-bootstrap\n",
+                                            "yum update -y --security\n",
+
+                                            "function error_exit\n",
+                                            "{\n",
+                                            "  /opt/aws/bin/cfn-signal -e 1 -r \"$1\" '",
+                                            "'\n",
+                                            "  exit 1\n",
+                                            "}\n",
+
+                                            "/opt/aws/bin/cfn-init -s ",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            " -r SpotFleet ",
+                                            "         --region ",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            " || error_exit 'Failed to initialize Chef Solo'\n",
+                                            "bash /var/init/storage.sh > /var/init/storage.log 2>&1\n",
+                                            "bash /var/init/bootstrap.sh > /var/init/bootstrap.log 2>&1\n",
+                                            "export HOME=/root\n",
+                                            "export EC2_INSTANCE_ID=\"`wget -q -O - http://instance-data/latest/meta-data/instance-id || error_exit \"wget instance-id has failed: $?\"`\"\n",
+                                            "aws ec2 create-tags --resources $EC2_INSTANCE_ID --tags Key=Name,Value=kbc-vpc-tapi-sql-$EC2_INSTANCE_ID  Key=Env,Value=PRODUCTION Key=Stack,Value=TAPI Key=Role,Value=TAPI-DB --region ",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n",
+                                            "chef-solo --environment production -j /var/init/node.json --config /var/init/solo.rb --node-name kbc-vpc-tapi-sql-$EC2_INSTANCE_ID  ",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            " > /var/init/chef_solo.log 2>&1\n",
+                                            "/opt/aws/bin/cfn-signal -e $? '",
+                                            "'\n"
+                                        ]
+                                    ]
+                                }
+                            }
+
+                        },
+                        {
+                            "InstanceType": {
+                                "Ref": "InstanceType"
+                            },
+                            "ImageId": {
+                                "Fn::FindInMap": [ "AWSRegionArch2AMI", {
+                                    "Ref": "AWS::Region"
+                                },
+                                    {
+                                        "Fn::FindInMap": [ "AWSInstanceType2Arch", {
+                                            "Ref": "InstanceType"
+                                        }, "Arch" ]
+                                    }
+                                ]
+                            },
+                            "IamInstanceProfile": {
+                                "Arn": {
+                                    "Fn::GetAtt": ["InstanceRoleInstanceProfile", "Arn"]
+                                }
+                            },
+                            "BlockDeviceMappings": {
+                                "Fn::FindInMap": ["InstanceSettings", "TapiDefault", "BlockDeviceMappings"]
+                            },
+                            "NetworkInterfaces": [
+                                {
+                                    "Groups": ["sg-07086f63"],
+                                    "AssociatePublicIpAddress": "true",
+                                    "DeviceIndex": "0",
+                                    "DeleteOnTermination": "true",
+                                    "SubnetId": "subnet-b73dc6c1"
+                                }
+                            ],
+                            "KeyName": "Martin",
+                            "UserData": {
+                                "Fn::Base64": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "#!/bin/bash\n",
+                                            "yum update -y aws-cfn-bootstrap\n",
+                                            "yum update -y --security\n",
+
+                                            "function error_exit\n",
+                                            "{\n",
+                                            "  /opt/aws/bin/cfn-signal -e 1 -r \"$1\" '",
+                                            "'\n",
+                                            "  exit 1\n",
+                                            "}\n",
+
+                                            "/opt/aws/bin/cfn-init -s ",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            " -r SpotFleet ",
+                                            "         --region ",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            " || error_exit 'Failed to initialize Chef Solo'\n",
+                                            "bash /var/init/storage.sh > /var/init/storage.log 2>&1\n",
+                                            "bash /var/init/bootstrap.sh > /var/init/bootstrap.log 2>&1\n",
+                                            "export HOME=/root\n",
+                                            "export EC2_INSTANCE_ID=\"`wget -q -O - http://instance-data/latest/meta-data/instance-id || error_exit \"wget instance-id has failed: $?\"`\"\n",
+                                            "aws ec2 create-tags --resources $EC2_INSTANCE_ID --tags Key=Name,Value=kbc-vpc-tapi-sql-$EC2_INSTANCE_ID  Key=Env,Value=PRODUCTION Key=Stack,Value=TAPI Key=Role,Value=TAPI-DB --region ",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n",
                                             "chef-solo --environment production -j /var/init/node.json --config /var/init/solo.rb --node-name kbc-vpc-tapi-sql-$EC2_INSTANCE_ID  ",
                                             {
                                                 "Ref": "AWS::StackName"
@@ -356,6 +614,7 @@
                             }
 
                         }
+
                     ]
                 }
             }
