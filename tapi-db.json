@@ -57,7 +57,7 @@
         },
         "MysqlSettings": {
           "c3.large": {
-            "InnodbBufferPoolSize": "10G"
+            "InnodbBufferPoolSize": "3G"
           },
           "c3.8xlarge": {
             "InnodbBufferPoolSize": "54G"
