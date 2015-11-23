@@ -44,7 +44,7 @@ innodb-log-files-in-group      = 2
 innodb-log-file-size           = 512M
 innodb-flush-log-at-trx-commit = 2
 innodb-file-per-table          = 1
-innodb-buffer-pool-size        = 54G
+innodb-buffer-pool-size        = <%= innodb_buffer_pool_size %>
 
 # LOGGING #
 log-error                      = /var/lib/mysql/mysql-error.log

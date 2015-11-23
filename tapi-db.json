@@ -54,6 +54,14 @@
             "D": {
                 "TRANSFORMATIONS": "subnet-22f1d956"
             }
+        },
+        "MysqlSettings": {
+          "c3.large": {
+            "innodb_buffer_pool_size": "10G"
+          },
+          "c3.8xlarge": {
+            "innodb_buffer_pool_size": "54G"
+          }
         }
     },
     "Resources": {
@@ -140,7 +148,18 @@
                             },
                             "/var/init/node.json": {
                                 "content": {
-                                    "run_list": ["recipe[keboola-tapi-sql]"]
+                                    "run_list": ["recipe[keboola-tapi-sql]"],
+                                    "keboola-transformation-db": {
+                                      "mysql": {
+                                        "innodb-buffer-pool-size": "Fn::FindInMap": [
+                                            "MysqlSettings",
+                                            {
+                                              "Ref": "InstanceType"
+                                            },
+                                            "innodb_buffer_pool_size"
+                                        ]
+                                      }
+                                    }
                                 },
                                 "mode": "000644",
                                 "owner": "root",

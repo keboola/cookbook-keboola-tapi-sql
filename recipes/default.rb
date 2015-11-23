@@ -37,7 +37,17 @@ cookbook_file "/etc/my.cnf" do
     group "root"
 end
 
-directory "/media/ephemeral0/mysql/ " do
+template "/etc/my.cnf" do
+  source 'my.cnf.erb'
+  owner 'root'
+  group 'root'
+  mode 00644
+  variables({
+    :innodb_buffer_pool_size => node['keboola-transformation-db']['mysql']['innodb-buffer-pool-size']
+  })
+end
+
+directory "/media/ephemeral0/mysql" do
   owner "mysql"
   group "mysql"
   mode 00755
