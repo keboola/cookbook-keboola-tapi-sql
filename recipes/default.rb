@@ -37,6 +37,22 @@ cookbook_file "/etc/my.cnf" do
     group "root"
 end
 
+directory "/media/ephemeral0/mysql/ " do
+  owner "mysql"
+  group "mysql"
+  mode 00755
+  action :create
+end
+
+directory "/var/lib/mysql" do
+  recursive true
+  action :delete
+end
+
+link "/var/lib/mysql" do
+  to "/media/ephemeral0/mysql"
+end
+
 execute "create log dirs" do
     command "mkdir /var/log/mariadb"
 end
