@@ -22,14 +22,6 @@ cookbook_file "/tmp/register-mysql-server.php" do
     group "root"
 end
 
-execute "clean yum cache" do
-  command "yum clean all"
-end
-
-execute "install mariadb" do
-  command "yum -y install php MariaDB-server MariaDB-client"
-end
-
 template "/etc/my.cnf" do
   source 'my.cnf.erb'
   owner 'root'
@@ -59,6 +51,16 @@ end
 execute "create log dirs" do
     command "mkdir /var/log/mariadb"
 end
+
+execute "clean yum cache" do
+  command "yum clean all"
+end
+
+execute "install mariadb" do
+  command "yum -y install php MariaDB-server MariaDB-client"
+end
+
+
 
 execute "run mariadb" do
     command "/etc/init.d/mysql start"
