@@ -189,7 +189,7 @@
                                         "\n",
                                         [
                                             "curl -# -L -k -o /tmp/cookbook-keboola-tapi-sql.tar.gz https://github.com/keboola/cookbook-keboola-tapi-sql/archive/master.tar.gz",
-                                            "curl -L \"https://packagecloud.io/chef/stable/download?distro=6&filename=chefdk-0.2.2-1.x86_64.rpm\" > /tmp/chefdk.rpm",
+                                            "curl  -# -L -k -o /tmp/chefdk.rpm https://packages.chef.io/stable/el/6/chefdk-0.2.2-1.x86_64.rpm",
                                             "rpm -i /tmp/chefdk.rpm",
                                             "mkdir -p /var/chef/cookbooks/keboola-tapi-sql",
                                             "tar --strip 1 -C /var/chef/cookbooks/keboola-tapi-sql -xf /tmp/cookbook-keboola-tapi-sql.tar.gz",
