@@ -55,7 +55,7 @@
                     {
                       "DeviceName": "/dev/sdg",
                       "Ebs": {
-                        "VolumeSize": "200",
+                        "VolumeSize": "500",
                         "VolumeType": "gp2",
                         "DeleteOnTermination": "true",
                         "Encrypted": "true"
@@ -64,7 +64,7 @@
                     {
                       "DeviceName": "/dev/sdh",
                       "Ebs": {
-                        "VolumeSize": "200",
+                        "VolumeSize": "500",
                         "VolumeType": "gp2",
                         "DeleteOnTermination": "true",
                         "Encrypted": "true"
@@ -314,6 +314,7 @@
                                     }
                                 ]
                             },
+                            "EbsOptimized": true,
                             "IamInstanceProfile": {
                                 "Arn": {
                                     "Fn::GetAtt": ["InstanceRoleInstanceProfile", "Arn"]
@@ -395,6 +396,7 @@
                                     }
                                 ]
                             },
+                            "EbsOptimized": true,
                             "IamInstanceProfile": {
                                 "Arn": {
                                     "Fn::GetAtt": ["InstanceRoleInstanceProfile", "Arn"]
@@ -476,6 +478,7 @@
                                     }
                                 ]
                             },
+                            "EbsOptimized": true,
                             "IamInstanceProfile": {
                                 "Arn": {
                                     "Fn::GetAtt": ["InstanceRoleInstanceProfile", "Arn"]
@@ -557,6 +560,7 @@
                                     }
                                 ]
                             },
+                            "EbsOptimized": true,
                             "IamInstanceProfile": {
                                 "Arn": {
                                     "Fn::GetAtt": ["InstanceRoleInstanceProfile", "Arn"]
