@@ -83,5 +83,5 @@ execute "install mkpasswd" do
 end
 
 execute "prepare provisioning user and register provisioning server" do
-    command "php /tmp/register-mysql-server.php --manage-api-url=\"#{node['keboola-transformation-db']['provisioning-manage-api']['url']}\" --manage-token=\"#{node['keboola-transformation-db']['provisioning-manage-api']['token']}\" --local-root-password=\"#{node['keboola-transformation-db']['mysql']['default-password']}\" --user=provisioning --database=provisioning --host=\"`wget -q -O - http://instance-data/latest/meta-data/public-hostname`\" --type=\"#{node['keboola-transformation-db']['type']\" --mode=active"
+    command "php /tmp/register-mysql-server.php --manage-api-url=\"#{node['keboola-transformation-db']['provisioning-manage-api']['url']}\" --manage-token=\"#{node['keboola-transformation-db']['provisioning-manage-api']['token']}\" --local-root-password=\"#{node['keboola-transformation-db']['mysql']['default-password']}\" --user=provisioning --database=provisioning --host=\"`wget -q -O - http://instance-data/latest/meta-data/public-hostname`\" --type=\"#{node['keboola-transformation-db']['type']}\" --mode=active"
 end
