@@ -6,7 +6,7 @@
             "Description": "Mysql Server EC2 instance type",
             "Type": "String",
             "Default": "c4.8xlarge",
-            "AllowedValues": ["c4.large", "c4.8xlarge"],
+            "AllowedValues": ["c4.large", "c4.8xlarge", "m4.4xlarge"],
             "ConstraintDescription": "must be a valid EC2 instance type."
         },
         "SpotPrice": {
@@ -26,6 +26,9 @@
             "c4.8xlarge": {
                 "Arch": "PV64"
             },
+            "m4.4xlarge": {
+                "Arch": "PV64"
+            },
             "c4.large": {
                 "Arch": "PV64"
             }
@@ -40,6 +43,9 @@
                 "InnodbBufferPoolSize": "3G"
             },
             "c4.8xlarge": {
+                "InnodbBufferPoolSize": "54G"
+            },
+            "m4.4xlarge": {
                 "InnodbBufferPoolSize": "54G"
             }
         },
