@@ -18,7 +18,7 @@ $longopts = array("manage-api-url:", "manage-token:", "local-root-password:", "u
 
 $options = getopt($shortopts, $longopts);
 
-$command = "mkpasswd -l 16";
+$command = "mkpasswd -l 16 -s 0";
 $password = exec($command);
 
 $command = "mysql -u root -p" . escapeshellarg($options["local-root-password"]) . " -e \"GRANT ALL PRIVILEGES ON *.* TO " .  escapeshellarg($options["user"]) . "@'%' IDENTIFIED BY " .  escapeshellarg($password) . " WITH GRANT OPTION;\"";
@@ -40,7 +40,7 @@ if ($statusCode != 0) {
 }
 
 if ($options["register"] != "Yes") {
-    print "Skipping registration to Provisioning API";
+    print "Skipping registration to Provisioning API\n";
     exit(0);
 }
 
