@@ -1,5 +1,5 @@
 [mariadb]
-name = MariaDB-5.5.44
-baseurl = https://downloads.mariadb.com/files/MariaDB/mariadb-5.5.44/yum/centos7-amd64
+name = MariaDB-5.5.53
+baseurl = https://downloads.mariadb.com/files/MariaDB/mariadb-5.5.53/yum/centos7-amd64
 gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
 gpgcheck=1

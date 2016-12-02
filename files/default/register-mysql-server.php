@@ -9,15 +9,16 @@
  *      --database=provisioning \
  *      --host=db-server.keboola.com \
  *      --type=transformations \
- *      --mode=active
+ *      --mode=active \
+ *      --register=Yes
  */
 
-$shortopts = "a:m:p:u:d:h:t:m:";
-$longopts = array("manage-api-url:", "manage-token:", "local-root-password:", "user:", "database:", "host:", "type:", "mode:");
+$shortopts = "a:m:p:u:d:h:t:m:r:";
+$longopts = array("manage-api-url:", "manage-token:", "local-root-password:", "user:", "database:", "host:", "type:", "mode:", "register:");
 
 $options = getopt($shortopts, $longopts);
 
-$command = "mkpasswd -l 16";
+$command = "mkpasswd -l 16 -s 0";
 $password = exec($command);
 
 $command = "mysql -u root -p" . escapeshellarg($options["local-root-password"]) . " -e \"GRANT ALL PRIVILEGES ON *.* TO " .  escapeshellarg($options["user"]) . "@'%' IDENTIFIED BY " .  escapeshellarg($password) . " WITH GRANT OPTION;\"";
@@ -37,6 +38,13 @@ if ($statusCode != 0) {
     print $response;
     exit(1);
 }
+
+if ($options["register"] != "Yes") {
+    print "Skipping registration to Provisioning API\n";
+    exit(0);
+}
+
+print "Registering server to Provisioning API " . $options["manage-api-url"] . "\n";
 
 $command = 'curl -s -X "POST" "' . $options["manage-api-url"] . '/server/mysql" ';
 $command .= '-H "X-KBC-ManageApiToken: ' . $options["manage-token"] . '" ';

@@ -19,6 +19,12 @@
             "Type": "String",
             "Default": "TRANSFORMATIONS",
             "AllowedValues": ["TRANSFORMATIONS"]
+        },
+        "RegisterProvisioning": {
+            "Description": "Register server to Provisioning API",
+            "Type": "String",
+            "Default": "No",
+            "AllowedValues": ["No", "Yes"]
         }
     },
     "Mappings": {
@@ -216,6 +222,9 @@
                                 "content": {
                                     "run_list": ["recipe[keboola-tapi-sql]"],
                                     "keboola-transformation-db": {
+                                        "register": {
+                                            "Ref": "RegisterProvisioning"
+                                        },
                                         "mysql": {
                                             "innodb-buffer-pool-size": {
                                                 "Fn::FindInMap": [
