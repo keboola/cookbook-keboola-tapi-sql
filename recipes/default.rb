@@ -60,8 +60,6 @@ execute "install mariadb" do
   command "yum -y install php MariaDB-server MariaDB-client"
 end
 
-
-
 execute "run mariadb" do
     command "/etc/init.d/mysql start"
 end
@@ -80,6 +78,18 @@ end
 
 execute "install mkpasswd" do
   command "yum -y install expect"
+end
+
+execute "mysql_secure_installation" do
+    command "mysql_secure_installation <<EOF
+#{node['keboola-transformation-db']['mysql']['default-password']}
+n
+y
+y
+y
+y
+y
+EOF"
 end
 
 execute "prepare provisioning user and register provisioning server" do
